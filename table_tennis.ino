@@ -13,7 +13,7 @@
 #define LCD_D4 5
 #define LCD_D5 4
 #define LCD_D6 3
-#define LCD_D7 2
+#define LCD_D7 7
 
 //RAW REMOTE CODES 
 #define REM_UP		0x219EA05F
@@ -114,7 +114,7 @@ uint8_t bb[8];                                               // uint8_t buffer f
 long result; //Store IR result
 
 uint8_t mode=0; //mode or state of the program
-unit8_t num_sets=3; //number of sets to play
+uint8_t num_sets=3; //number of sets to play
 
 int RECV_PIN = 9; //IR receive pin
 IRrecv irrecv(RECV_PIN);
@@ -174,6 +174,10 @@ void setup() {
 
 void loop() 
 {
+  
+  byte id_1;
+  byte id_2;
+  
   boolean rand_1; // variable to Set side
   boolean rand_2; //Set serve
 
