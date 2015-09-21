@@ -57,7 +57,7 @@
 #define REM_9   0x0449E79F
 #define REM_0   0x1BC0157B
 
-#define NUM_NAME 23
+#define NUM_NAME 20
 //********************************************************************************************
 
 
@@ -109,22 +109,19 @@ char player_names[][8] =
   {'C','h','n','g','C','h','e','n'}  ,
   {'P','e','t','e','B','f','r','d'}  ,
   {'P','h','i','l','L','a','y',' '}  ,
-  {'N','r','n','g','P','e','n','n'}  ,
+  {'J','u','n',' ','Y','i','n',' '}  ,  
   {'D','a','v','e','G','r','d','n'}  ,
   {'T','o','m',' ','L','i','u',' '}  ,
   {'L','i','a','m','M','n','g','l'}  ,
+  {'S','h','a','n','P','a','u','l'}  ,  
   {'X','i','n',' ','S','h','i',' '}  ,
   {'Q','i','n','g','L','u',' ',' '}  ,
   {'S','t','p','n','S','k','i','l'}  ,
   {'G','s','t','v','D','o','n','g'}  ,
   {'T','a','r','a','Y','e','e',' '}  ,
-  {'A','n','n','e','G','u','a','n'}  ,
   {'H','s','n',' ','M','a','k',' '}  ,
-  {'E','m','m','a','C','h','i','u'}  ,
-  {'J','u','l','e','K','l','t','y'}  ,
   {'C','o','l','n','S','t','s','n'}  ,
   {'S','a','m',' ','B','r','t','n'}  ,
-  {'C','h','r','l','S','t','w','n'}  ,
   {'K','e','v',' ','C','h','r','n'}  ,
   {'L','u','a','t','V','u','n','g'}  ,
   {'J','o','s','h','R','o','s','s'}
@@ -327,7 +324,7 @@ void loop()
       print_player_name(player_1,17);      
     }
 
-    print_set( player_1, player_2);
+    //print_set( player_1, player_2);
 
     // determine if a set has been won and then update set_score 
     if (game_score(player_1,player_2))
@@ -396,12 +393,12 @@ void enter_player_id(byte &id)
     delay(50);
     if (ir_result==REM_DOWN)
     {
-      id=(id+1)%NUM_NAME ;
+      id=(((id+1)%NUM_NAME)+NUM_NAME)%NUM_NAME;
     }
   
     if (ir_result==REM_UP)
     {
-      id=(id-1)%NUM_NAME ;
+      id=(((id-1)%NUM_NAME)+NUM_NAME)%NUM_NAME;
     }
     
     if (ir_result==REM_UP || ir_result==REM_DOWN)
@@ -575,14 +572,16 @@ boolean game_score(player player_a,player player_b)
    );
 }
 
-//print name vertically
+//print initals and set
 void print_player_name(player player_a,uint8_t left_adjust) 
 {
-  for (uint8_t i=0 ; i<8 ; i++)
+  for (uint8_t i=0 ; i<2 ; i++)
   {
-    lcd.setCursor( ((i>>2)&B1)+left_adjust , (i&B11) ); //column,row
-    lcd.print(player_a.read_name(i));                                
+    lcd.setCursor( i+left_adjust , 0 ); //column,row
+    lcd.print(player_a.read_name(i*4));                                
   }
+  lcd.setCursor( 1+left_adjust , 0 ); //column,row
+  lcd.print(player_a.read_set_score());
 }
 
 //print player first name inital and set score below
