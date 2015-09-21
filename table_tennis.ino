@@ -10,12 +10,13 @@
 //Pins used for LCD
 #define LCD_RS 12
 #define LCD_EN 11
-#define LCD_D4 5
-#define LCD_D5 4
-#define LCD_D6 3
-#define LCD_D7 7
+#define LCD_D4 7
+#define LCD_D5 6
+#define LCD_D6 5
+#define LCD_D7 3
 
-//RAW REMOTE CODES 
+//RAW REMOTE CODES
+/*WD REMOTE
 #define REM_UP		0x219EA05F
 #define REM_DOWN	0x219E00FF
 #define REM_LEFT	0x219EE01F
@@ -36,11 +37,32 @@
 #define REM_GREEN	0x219E28D7
 #define REM_BLUE	0x219EE817
 #define REM_YELLOW	0x219E6897
+*/
+
+//********888888888CHEAP REMOTE*/
+#define REM_UP          0x00511DBB
+#define REM_LEFT        0x52A3D41F
+#define REM_RIGHT       0x20FE4DBB
+#define REM_DOWN        0xA3C8EDDB
+#define REM_OK          0xD7E84B1B
+
+#define REM_1   0xC101E57B
+#define REM_2   0x97483BFB
+#define REM_3   0xF0C41643
+#define REM_4   0x9716BE3F
+#define REM_5   0x3D9AE3F7
+#define REM_6   0x6182021B
+#define REM_7   0x8C22657B
+#define REM_8   0x488F3CBB
+#define REM_9   0x0449E79F
+#define REM_0   0x1BC0157B
+
+#define NUM_NAME 23
 //********************************************************************************************
 
 
 #include <IRremote.h>		//library for reading IR remote comes from github.com/
-#include "player.h"  		//library used for palyer object
+#include "/home/chez/git/table_tennis/player/player.h"  		//library used for palyer object
 #include <avr/pgmspace.h>   // for memory storage in program space
 #include <LiquidCrystal.h>  // library for LCD interface
 
@@ -130,7 +152,7 @@ void setup() {
 
   Serial.begin(9600);          //  setup serial
   irrecv.enableIRIn(); // Start the receiver
-
+  Serial.println("Starting Setup");
   randomSeed(analogRead(0)); //initialize a random seed
   lcd.write(pgm_read_byte( &bn[row][col]) );
 
@@ -161,7 +183,7 @@ void setup() {
   printNum(random(0,10),17);
   delay(3000);
   lcd.clear();
-
+  Serial.println("Setup Finished");
 }
 
 
@@ -175,7 +197,7 @@ void setup() {
 void loop() 
 {
   
-  byte id_1;
+  byte id_1=0;
   byte id_2;
   
   boolean rand_1; // variable to Set side
@@ -184,27 +206,33 @@ void loop()
   rand_1=random(2); //who serves first
   rand_2=random(2);// what side they are on
 
+  
   if (irrecv.decode(&results)) 
   {
+    
+    Serial.println(results.value, HEX);
     result=results.value & 0xFFFFFFFF; //store the output of the remote (read in raw mode see IR  library for more detail)
     irrecv.resume(); // Receive the next value
   }
 
   if (mode==0) //enter player ids
-  {
+  { 
+    Serial.println("Mode 0");
     lcd.clear();
-    lcd.setCursor(0,1);
+    lcd.setCursor(0,0);
     lcd.print(F("Enter id 1"));
-    id_1=enter_player_id(); //function to read in two digits sent by the remote andtranslate them to a two digit number
+    enter_player_id(id_1); //function to read in two digits sent by the remote andtranslate them to a two digit number
+    lcd.clear();
     player_1.set_name(player_names[id_1]); 
     lcd.setCursor(0, 3); 
     print_player_name_line(player_1);
     delay(1500);
     
+    id_2=id_1+1;
     lcd.clear();
-    lcd.setCursor(0,1);
+    lcd.setCursor(0,0);
     lcd.print(F("Enter id 2"));
-    id_2=enter_player_id();
+    enter_player_id(id_2);
     player_2.set_name(player_names[id_2]);		
     lcd.setCursor(0, 3); 
     print_player_name_line(player_2);    
@@ -216,7 +244,8 @@ void loop()
 
   
   if (mode==1) // determine and display who is serving and who is on waht side
-  {
+  { 
+    Serial.println("Mode 1");
     if (rand_1)
       init_serve(player_1,player_2);   
     else
@@ -343,6 +372,64 @@ void loop()
 //                                      SUBROUTINES
 // ********************************************************************************** //
 
+
+void enter_player_id(byte &id)
+{
+  lcd.setCursor(4,1);
+  lcd.print(F(">"));
+  long ir_result=0;
+  
+  for(int i=1; i<4 ;i++)
+      {
+        int pos;
+        pos=(id+i-1)%NUM_NAME;
+        lcd.setCursor(5,i);
+        lcd.print(pos);
+        Serial.println(i);
+        lcd.print(F("   "));
+        print_name_line(player_names[pos]); // TODO MAKE NEW FUNCTION print_player_name
+      }
+      
+  while(ir_result != REM_OK)
+  {
+    Serial.println(ir_result, HEX);
+    delay(50);
+    if (ir_result==REM_DOWN)
+    {
+      id=(id+1)%NUM_NAME ;
+    }
+  
+    if (ir_result==REM_UP)
+    {
+      id=(id-1)%NUM_NAME ;
+    }
+    
+    if (ir_result==REM_UP || ir_result==REM_DOWN)
+    {
+      for(int i=1; i<4 ;i++)
+      {
+        int pos;
+        pos=(id+i-1)%NUM_NAME;
+        Serial.println(id);
+        lcd.setCursor(5,i);
+        lcd.print(pos);
+        lcd.print(F("   "));
+        print_name_line(player_names[pos]);
+      }
+    }
+    
+    ir_result=0;
+    
+    if (irrecv.decode(&results))
+    {
+      ir_result=results.value & 0xFFFFFFFF; //store the output of the remote (read in raw mode see IR  library for more detail)
+      
+      irrecv.resume(); // Receive the next value
+    }
+  }
+    
+}
+/*
 // function used to read two remote presses and ouput a two digit number
 
 int enter_player_id()
@@ -382,6 +469,7 @@ int enter_player_id()
   }
   return(10*digit_1+digit_0);
 }
+*/
 
 //convert remote results to 0-9 number
 int remote_numpad(int result)
@@ -593,6 +681,17 @@ void print_player_name_line(player player_a)
       lcd.print(F(" "));
   }
 }
+
+void print_name_line(char name[8])
+{
+  for (uint8_t i=0 ; i<8 ; i++)
+  {
+      lcd.print(name[i]);
+//    lcd.print(name+sizeof(name)*i);
+    if (i==3)
+      lcd.print(F(" "));
+  }
+}
 // ********************************************************************************** //
 //                                      OPERATION ROUTINES
 // ********************************************************************************** //
@@ -610,7 +709,6 @@ int freeRam(void)
   }
   return free_memory; 
 }
-
 
 
 
