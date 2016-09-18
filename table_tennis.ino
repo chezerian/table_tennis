@@ -7,13 +7,6 @@
 #define build 1
 #define revision 2
 
-//Pins used for LCD
-#define LCD_RS 12
-#define LCD_EN 11
-#define LCD_D4 7
-#define LCD_D5 6
-#define LCD_D6 5
-#define LCD_D7 3
 
 //RAW REMOTE CODES
 /*WD REMOTE
@@ -57,12 +50,13 @@
 #define REM_9   0x0449E79F
 #define REM_0   0x1BC0157B
 
-#define NUM_NAME 20
+#define NUM_NAME 23
 //********************************************************************************************
 
 
-#include <IRremote.h>		//library for reading IR remote comes from github.com/
-#include "/home/chez/git/table_tennis/player/player.h"  		//library used for palyer object
+//#include "/home/chez/IRremote.h"		//library for reading IR remote comes from github.com/
+#include <IRremote.h>    //library for reading IR remote comes from github.com/
+#include "/home/chez/sketchbook/table_tennis/player/player.h"  		//library used for palyer object
 #include <avr/pgmspace.h>   // for memory storage in program space
 #include <LiquidCrystal.h>  // library for LCD interface
 
@@ -75,6 +69,13 @@
 
 
 
+//Pins used for LCD
+#define LCD_RS 12
+#define LCD_EN 11
+#define LCD_D4 7
+#define LCD_D5 6
+#define LCD_D6 5
+#define LCD_D7 3
 
 // initialize the interface pins
 LiquidCrystal lcd(LCD_RS,LCD_EN,LCD_D4,LCD_D5,LCD_D6,LCD_D7); // Create the lcd object
@@ -105,26 +106,8 @@ const char bn[][30] PROGMEM =
 //built in names of players
 char player_names[][8] =
 {
-  {'B','e','n',' ','C','h','r','n'}  ,
-  {'C','h','n','g','C','h','e','n'}  ,
-  {'P','e','t','e','B','f','r','d'}  ,
-  {'P','h','i','l','L','a','y',' '}  ,
-  {'J','u','n',' ','Y','i','n',' '}  ,  
-  {'D','a','v','e','G','r','d','n'}  ,
-  {'T','o','m',' ','L','i','u',' '}  ,
-  {'L','i','a','m','M','n','g','l'}  ,
-  {'S','h','a','n','P','a','u','l'}  ,  
-  {'X','i','n',' ','S','h','i',' '}  ,
-  {'Q','i','n','g','L','u',' ',' '}  ,
-  {'S','t','p','n','S','k','i','l'}  ,
-  {'G','s','t','v','D','o','n','g'}  ,
-  {'T','a','r','a','Y','e','e',' '}  ,
-  {'H','s','n',' ','M','a','k',' '}  ,
-  {'C','o','l','n','S','t','s','n'}  ,
-  {'S','a','m',' ','B','r','t','n'}  ,
-  {'K','e','v',' ','C','h','r','n'}  ,
-  {'L','u','a','t','V','u','n','g'}  ,
-  {'J','o','s','h','R','o','s','s'}
+
+
 };
 
 uint8_t col,row,nb=0,bc=0;                                   // general
@@ -207,7 +190,7 @@ void loop()
   if (irrecv.decode(&results)) 
   {
     
-    Serial.println(results.value, HEX);
+    //Serial.println(results.value, HEX);
     result=results.value & 0xFFFFFFFF; //store the output of the remote (read in raw mode see IR  library for more detail)
     irrecv.resume(); // Receive the next value
   }
@@ -217,7 +200,7 @@ void loop()
     Serial.println("Mode 0");
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.print(F("Enter id 1"));
+    lcd.print(F("Enter player 1"));
     enter_player_id(id_1); //function to read in two digits sent by the remote andtranslate them to a two digit number
     lcd.clear();
     player_1.set_name(player_names[id_1]); 
@@ -228,8 +211,9 @@ void loop()
     id_2=id_1+1;
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.print(F("Enter id 2"));
+    lcd.print(F("Enter player 2"));
     enter_player_id(id_2);
+    lcd.clear();
     player_2.set_name(player_names[id_2]);		
     lcd.setCursor(0, 3); 
     print_player_name_line(player_2);    
@@ -380,11 +364,12 @@ void enter_player_id(byte &id)
       {
         int pos;
         pos=(id+i-1)%NUM_NAME;
-        lcd.setCursor(5,i);
-        lcd.print(pos);
-        Serial.println(i);
-        lcd.print(F("   "));
+        lcd.setCursor(2,i);   
+//        Serial.println(i);
         print_name_line(player_names[pos]); // TODO MAKE NEW FUNCTION print_player_name
+        lcd.setCursor(15+(pos<10),i);   
+        lcd.print(pos);
+        
       }
       
   while(ir_result != REM_OK)
@@ -393,12 +378,12 @@ void enter_player_id(byte &id)
     delay(50);
     if (ir_result==REM_DOWN)
     {
-      id=(((id+1)%NUM_NAME)+NUM_NAME)%NUM_NAME;
+      id=(((id+1)%NUM_NAME)+NUM_NAME)%NUM_NAME ;
     }
   
     if (ir_result==REM_UP)
     {
-      id=(((id-1)%NUM_NAME)+NUM_NAME)%NUM_NAME;
+      id=(((id-1)%NUM_NAME)+NUM_NAME)%NUM_NAME ;
     }
     
     if (ir_result==REM_UP || ir_result==REM_DOWN)
@@ -407,11 +392,11 @@ void enter_player_id(byte &id)
       {
         int pos;
         pos=(id+i-1)%NUM_NAME;
-        Serial.println(id);
-        lcd.setCursor(5,i);
-        lcd.print(pos);
-        lcd.print(F("   "));
-        print_name_line(player_names[pos]);
+//      Serial.println(id);
+        lcd.setCursor(2,i); //need to shift back one unit for double digit
+        print_name_line(player_names[pos]); // TODO MAKE NEW FUNCTION print_player_name
+        lcd.setCursor(15+(pos<10),i);   
+        lcd.print(pos, DEC);
       }
     }
     
@@ -572,17 +557,28 @@ boolean game_score(player player_a,player player_b)
    );
 }
 
-//print initals and set
-void print_player_name(player player_a,uint8_t left_adjust) 
+void print_player_name(player player_a,uint8_t left_adjust)
 {
   for (uint8_t i=0 ; i<2 ; i++)
   {
-    lcd.setCursor( i+left_adjust , 0 ); //column,row
-    lcd.print(player_a.read_name(i*4));                                
+      lcd.setCursor( i+left_adjust , 0 ); //column,row
+      lcd.print(player_a.read_name(i*4));                                          
   }
-  lcd.setCursor( 1+left_adjust , 0 ); //column,row
+  lcd.setCursor( 1+left_adjust , 1 ); //column,row
   lcd.print(player_a.read_set_score());
 }
+
+/*
+//print name vertically
+void print_player_name(player player_a,uint8_t left_adjust) 
+{
+  for (uint8_t i=0 ; i<8 ; i++)
+  {
+    lcd.setCursor( ((i>>2)&B1)+left_adjust , (i&B11) ); //column,row
+    lcd.print(player_a.read_name(i));                                
+  }
+}
+
 
 //print player first name inital and set score below
 void print_set(player player_a,player player_b) 
@@ -600,6 +596,7 @@ void print_set(player player_a,player player_b)
       lcd.print(player_b.read_set_score());                                
   }
 }
+*/
 
 void print_player_scores(player player_a,player player_b) 
 {
@@ -649,7 +646,7 @@ void printColon(uint8_t leftAdjust)
     else lcd.print(F(" "));
   }
 }
-
+/*
 void print_left_Colon(uint8_t leftAdjust) 
 {
   for(int row=0; row<4; row++)
@@ -668,6 +665,26 @@ void print_right_Colon(byte leftAdjust)
     if(row == 1 || row == 2)    lcd.write(pgm_read_byte( &bn[-3+3*row][2]) ); 
     else lcd.print(F(" "));
   }
+}
+*/
+
+void print_left_Colon(uint8_t leftAdjust)
+{
+      for(int row=0; row<2; row++)
+      {
+            lcd.setCursor(leftAdjust,row+1);
+            lcd.write(pgm_read_byte( &bn[3*row][0]) );
+           
+      }
+}
+ 
+void print_right_Colon(byte leftAdjust)
+{
+      for(int row=0; row<2; row++)
+      {
+            lcd.setCursor(leftAdjust,row+1);
+            lcd.write(pgm_read_byte( &bn[3*row][2]) );     
+      }
 }
 
 //print name horizontally iwth a space in between the first and last name
